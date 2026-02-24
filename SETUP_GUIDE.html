@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BizSuite — Complete Setup Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#f1f5f9;color:#0f172a;line-height:1.6}
+.header{background:linear-gradient(135deg,#0f172a,#1e1b4b);color:#fff;padding:44px 32px;text-align:center}
+.header h1{font-size:28px;font-weight:800;margin-bottom:8px}
+.header p{font-size:15px;opacity:0.6;margin-bottom:16px}
+.badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.badge{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:700}
+.badge.green{background:#16a34a;color:#fff}.badge.blue{background:#4f46e5;color:#fff}.badge.amber{background:#d97706;color:#fff}
+.container{max-width:780px;margin:0 auto;padding:28px 18px 60px}
+.card{background:#fff;border-radius:12px;border:1px solid #e2e8f0;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.card h2{font-size:17px;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.step{display:flex;gap:14px;margin-bottom:16px;align-items:flex-start}
+.num{width:32px;height:32px;border-radius:50%;background:#4f46e5;color:#fff;font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.num.done{background:#16a34a}
+.sc h3{font-size:14px;font-weight:700;margin-bottom:4px;color:#0f172a}
+.sc p{font-size:13px;color:#334155;line-height:1.7}
+code{background:#f1f5f9;border:1px solid #e2e8f0;padding:2px 8px;border-radius:4px;font-size:12px;font-family:monospace;color:#4338ca}
+.sql{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-family:monospace;font-size:12px;line-height:1.9;overflow-x:auto;white-space:pre;margin:10px 0}
+.sc-comment{color:#475569}
+.tip{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px 14px;font-size:12.5px;color:#1e40af;margin-top:10px;line-height:1.7}
+.warn{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:12px 14px;font-size:12.5px;color:#92400e;margin-top:10px;line-height:1.7}
+.ok{background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:12px 14px;font-size:12.5px;color:#166534;margin-top:10px;line-height:1.7}
+.divider{height:1px;background:#e2e8f0;margin:16px 0}
+.file-box{background:#1e293b;border-radius:10px;padding:18px;margin:12px 0}
+.file-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #334155}
+.file-row:last-child{border-bottom:none}
+.file-ico{font-size:18px;width:24px;text-align:center}
+.file-name{font-weight:700;color:#e2e8f0;font-size:13px}
+.file-desc{font-size:12px;color:#94a3b8;margin-top:1px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.mini-card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px}
+.mini-card .ico{font-size:22px;margin-bottom:6px}
+.mini-card h4{font-size:13px;font-weight:700;margin-bottom:3px}
+.mini-card p{font-size:12px;color:#64748b}
+a{color:#4f46e5}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}.container{padding:14px 12px 40px}.header{padding:28px 14px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>🚀 BizSuite SaaS — Complete Setup Guide</h1>
+  <p>Full multi-tenant accounting SaaS with admin panel, feature flags, and cloud sync</p>
+  <div class="badges">
+    <span class="badge green">✅ Multi-Tenant</span>
+    <span class="badge blue">🔐 Per-Client Login</span>
+    <span class="badge amber">⚡ Feature Flags</span>
+    <span class="badge green">☁️ Supabase Powered</span>
+  </div>
+</div>
+<div class="container">
+
+  <!-- FILES -->
+  <div class="card">
+    <h2>📁 What's in This Package</h2>
+    <div class="file-box">
+      <div class="file-row"><span class="file-ico">📊</span><div><div class="file-name">app.html</div><div class="file-desc">The client-facing accounting app. Your clients use this to log in and manage their business.</div></div></div>
+      <div class="file-row"><span class="file-ico">🔴</span><div><div class="file-name">admin.html</div><div class="file-desc">Your super admin panel. Only you can log in here. Add clients, toggle features, set plans.</div></div></div>
+      <div class="file-row"><span class="file-ico">🗄️</span><div><div class="file-name">supabase_schema.sql</div><div class="file-desc">Run this ONCE in Supabase SQL Editor. Creates all tables, security policies, triggers.</div></div></div>
+      <div class="file-row"><span class="file-ico">📖</span><div><div class="file-name">SETUP_GUIDE.html</div><div class="file-desc">This file — full instructions for deployment and usage.</div></div></div>
+    </div>
+    <div class="grid2">
+      <div class="mini-card"><div class="ico">🏢</div><h4>For Your Clients</h4><p>Each client gets their own login to <strong>app.html</strong>. Their data is 100% separate from all other clients.</p></div>
+      <div class="mini-card"><div class="ico">👑</div><h4>For You (Admin)</h4><p>You log into <strong>admin.html</strong> to add clients, enable modules, change plans, and monitor activity.</p></div>
+    </div>
+  </div>
+
+  <!-- STEP 1: SUPABASE -->
+  <div class="card">
+    <h2>📋 Step 1 — Create Supabase Project</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Go to supabase.com</h3><p>Visit <a href="https://supabase.com" target="_blank">supabase.com</a> → Sign up free (GitHub or email).</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Create New Project</h3><p>Click <strong>New Project</strong> → Name: <code>bizsuite</code> → Set a database password → Region: <strong>Singapore</strong> → Create project. Wait 1-2 minutes.</p></div></div>
+    <div class="step"><div class="num">3</div><div class="sc"><h3>Run the SQL Schema</h3><p>Go to <strong>SQL Editor</strong> → <strong>New query</strong> → Copy & paste the entire contents of <code>supabase_schema.sql</code> → Click <strong>Run</strong>.</p>
+    <div class="ok">✅ You should see "Success. No rows returned." for each statement.</div></div></div>
+    <div class="step"><div class="num">4</div><div class="sc"><h3>Disable Email Confirmation (optional)</h3><p>Go to <strong>Authentication → Providers → Email</strong> → Turn OFF <strong>Confirm email</strong> → Save. This makes testing easier.</p></div></div>
+  </div>
+
+  <!-- STEP 2: ADMIN ACCOUNT -->
+  <div class="card">
+    <h2>👑 Step 2 — Create Your Super Admin Account</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Create your auth account</h3><p>Go to Supabase → <strong>Authentication → Users</strong> → click <strong>"Add user"</strong> or <strong>"Invite user"</strong> → enter YOUR email and password.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Register as Super Admin in database</h3><p>Go to <strong>SQL Editor</strong> → New query → paste this (replace with YOUR email):</p>
+    <div class="sql"><span class="sc-comment">-- Replace 'youremail@gmail.com' with your actual email</span>
+INSERT INTO super_admins (id, email)
+SELECT id, email FROM auth.users
+WHERE email = 'youremail@gmail.com';</div>
+    <div class="ok">✅ This makes your account the super admin. Only super admins can log into admin.html.</div></div></div>
+  </div>
+
+  <!-- STEP 3: GET KEYS -->
+  <div class="card">
+    <h2>🔑 Step 3 — Copy Your API Keys</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Go to Settings → API</h3><p>Click ⚙️ Settings (bottom-left) → <strong>API</strong>.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Copy these two values</h3>
+      <p><strong>Project URL:</strong> <code>https://xxxxxxxxxx.supabase.co</code><br>
+      <strong>anon / public key:</strong> <code>eyJhbGciOiJIUzI1NiIs…</code></p>
+      <div class="warn">⚠️ Use ONLY the <strong>anon/public</strong> key in both files. Never use service_role key in HTML files.</div>
+    </div></div>
+  </div>
+
+  <!-- STEP 4: CONNECT FILES -->
+  <div class="card">
+    <h2>⚡ Step 4 — Connect Files to Supabase</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Open admin.html → Configure Supabase</h3><p>Open admin.html in your browser → click <strong>"Configure Supabase"</strong> → paste your URL and anon key → Save. You'll see "Supabase connected!"</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Log into admin.html</h3><p>Enter the email and password you created in Step 2. You're now inside the admin panel!</p></div></div>
+    <div class="step"><div class="num">3</div><div class="sc"><h3>Open app.html → Configure Supabase</h3><p>Open app.html → click <strong>"Configure Supabase connection"</strong> (bottom of login screen) → paste same URL and anon key → Save.</p></div></div>
+    <div class="ok" style="margin-top:4px">✅ Both files are now connected to your cloud database.</div>
+  </div>
+
+  <!-- STEP 5: DEPLOY -->
+  <div class="card">
+    <h2>🌐 Step 5 — Deploy to the Internet (Netlify — Free)</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Go to netlify.com</h3><p>Sign up free → Click <strong>"Add new site" → "Deploy manually"</strong>.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Drag & drop your folder</h3><p>Drag the entire <code>bizsuite/</code> folder onto the deploy area. Netlify gives you a URL like <code>amazing-dolphin-123.netlify.app</code>.</p></div></div>
+    <div class="step"><div class="num">3</div><div class="sc"><h3>Your URLs are now live:</h3>
+      <p>📊 <strong>Client App:</strong> <code>yoursite.netlify.app/app.html</code><br>
+      🔴 <strong>Admin Panel:</strong> <code>yoursite.netlify.app/admin.html</code></p>
+      <div class="tip">💡 You can buy a custom domain (e.g. <strong>bizsuite.pk</strong>) and connect it to Netlify for just Rs 3,000/year. Looks much more professional to clients.</div>
+    </div></div>
+    <div class="step"><div class="num">4</div><div class="sc"><h3>Re-configure Supabase on hosted version</h3><p>When you open the live URL, click "Configure Supabase" again and paste your keys — the hosted version needs to be configured once too. The keys save in browser localStorage on that device.</p></div></div>
+  </div>
+
+  <!-- STEP 6: ADD CLIENTS -->
+  <div class="card">
+    <h2>🏢 Step 6 — Adding Your First Client</h2>
+    <div class="step"><div class="num">1</div><div class="sc"><h3>Log into admin.html</h3><p>Go to <strong>admin.html</strong> → sign in with your super admin email.</p></div></div>
+    <div class="step"><div class="num">2</div><div class="sc"><h3>Click "➕ Add Client"</h3><p>Fill in: Company name, email, temporary password, plan, status. Toggle on any premium modules they've paid for.</p></div></div>
+    <div class="step"><div class="num">3</div><div class="sc"><h3>Send login details to client</h3><p>Share with your client:<br>
+    • URL: <code>yoursite.netlify.app/app.html</code><br>
+    • Email: their login email<br>
+    • Password: what you set<br>
+    • First time: configure Supabase using your URL + anon key</p>
+    <div class="tip">💡 You can pre-configure Supabase in the HTML file itself so clients don't need to enter it. Ask me to do this when you're ready to ship to clients.</div>
+    </div></div>
+    <div class="step"><div class="num done">✓</div><div class="sc"><h3>Done! Client is live</h3><p>Client logs in, sees their own empty dashboard, starts adding sales, expenses, products. Their data is 100% isolated from all other clients.</p></div></div>
+  </div>
+
+  <!-- MANAGING CLIENTS -->
+  <div class="card">
+    <h2>⚙️ Day-to-Day: Managing Clients</h2>
+    <div class="step"><div class="num">🔧</div><div class="sc"><h3>Toggle a module on/off</h3><p>Admin panel → Clients → find client → <strong>Manage</strong> → flip the toggle → Save. The module appears or disappears instantly next time they refresh.</p></div></div>
+    <div class="step"><div class="num">📦</div><div class="sc"><h3>Upgrade client plan</h3><p>Admin panel → Manage client → change plan to Pro or Enterprise → Save. Then toggle on whichever premium modules they've paid for.</p></div></div>
+    <div class="step"><div class="num">⛔</div><div class="sc"><h3>Suspend a client</h3><p>If a client doesn't pay, Admin panel → Manage → click <strong>Suspend</strong>. They cannot log in until you reactivate. Their data is safe.</p></div></div>
+    <div class="step"><div class="num">🏷️</div><div class="sc"><h3>Rename the product</h3><p>When you decide on your product name, tell me and I'll update all references — the brand name, login screen, sidebar, browser tab title — across both files in one go.</p></div></div>
+  </div>
+
+  <!-- PRICING GUIDE -->
+  <div class="card">
+    <h2>💰 Suggested Pricing Structure</h2>
+    <div class="grid2">
+      <div class="mini-card"><div class="ico">📦</div><h4>Basic Plan</h4><p>All 6 core modules. Perfect for freelancers and small shops.<br><strong>Rs 800–1,500/month</strong></p></div>
+      <div class="mini-card"><div class="ico">⭐</div><h4>Pro Plan</h4><p>Core + 2-3 premium modules (e.g. WhatsApp, Delivery, POS).<br><strong>Rs 2,000–3,500/month</strong></p></div>
+      <div class="mini-card"><div class="ico">🏆</div><h4>Enterprise</h4><p>All modules + priority support + custom features on request.<br><strong>Rs 5,000+/month</strong></p></div>
+      <div class="mini-card"><div class="ico">🔧</div><h4>Setup Fee</h4><p>One-time onboarding, data migration, training.<br><strong>Rs 5,000–15,000 one-time</strong></p></div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="card">
+    <h2>❓ Common Questions</h2>
+    <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:4px">Can client A see client B's data?</p>
+    <p style="font-size:13px;color:#334151;margin-bottom:14px">Absolutely not. Row Level Security in Supabase ensures each client can only ever see their own data, even if they somehow guessed another client's ID.</p>
+    <div class="divider"></div>
+    <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:4px">What if I want to rename the product?</p>
+    <p style="font-size:13px;color:#334151;margin-bottom:14px">Just tell me your product name and I'll update both files. All branding is in one place — easy swap.</p>
+    <div class="divider"></div>
+    <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:4px">Can I add new modules later?</p>
+    <p style="font-size:13px;color:#334151;margin-bottom:14px">Yes. You can ask me to build any new module (HR, fleet, manufacturing, etc.) and I'll add it to the feature flag system. Existing clients don't see it until you enable it for them.</p>
+    <div class="divider"></div>
+    <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:4px">How many clients can I have on Supabase free tier?</p>
+    <p style="font-size:13px;color:#334151;margin-bottom:14px">Up to ~50 clients comfortably on the free tier (500MB database). When you grow past that, upgrade to Supabase Pro for $25/month — a tiny cost compared to your revenue.</p>
+    <div class="divider"></div>
+    <p style="font-size:13.5px;font-weight:700;color:#0f172a;margin-bottom:4px">One client needs a completely custom feature. What do I do?</p>
+    <p style="font-size:13px;color:#334151">Charge them a one-time custom development fee, ask me to build it, and add it as a feature flag that only they have enabled. Their custom feature stays invisible to all other clients.</p>
+  </div>
+
+  <div style="text-align:center;font-size:12px;color:#94a3b8;padding:10px 0">BizSuite · Multi-Tenant SaaS · Powered by Supabase</div>
+</div>
+</body>
+</html>

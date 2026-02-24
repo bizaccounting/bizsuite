@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BizSuite — Admin Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Syne:wght@600;700;800&display=swap');
+:root{
+  --bg:#0f172a; --sidebar:#090e1a; --surface:#1e293b;
+  --surface2:#273348; --border:#2e4060; --accent:#6366f1;
+  --accent2:#4f46e5; --accentL:rgba(99,102,241,0.12);
+  --green:#10b981; --greenL:rgba(16,185,129,0.12);
+  --red:#ef4444; --redL:rgba(239,68,68,0.12);
+  --amber:#f59e0b; --amberL:rgba(245,158,11,0.12);
+  --text:#f1f5f9; --text2:#94a3b8; --muted:#475569;
+  --shadow:0 4px 20px rgba(0,0,0,0.4);
+  --radius:10px; --sbw:230px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg)}
+body{font-family:'Plus Jakarta Sans',sans-serif;color:var(--text);font-size:14px}
+
+/* LOGIN */
+#login-screen{display:none;position:fixed;inset:0;z-index:9000;background:radial-gradient(ellipse at 30% 40%,#1e1b4b 0%,#0f172a 60%);align-items:center;justify-content:center}
+#login-screen.show{display:flex}
+.lcard{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:40px 36px;width:100%;max-width:400px;box-shadow:var(--shadow);margin:16px}
+.lbrand{text-align:center;margin-bottom:30px}
+.lbrand .badge{display:inline-block;background:var(--redL);border:1px solid rgba(239,68,68,0.3);color:#fca5a5;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+.lbrand h1{font-family:'Syne',sans-serif;font-size:26px;color:var(--text);margin-bottom:4px}
+.lbrand p{font-size:12px;color:var(--text2)}
+.lf{margin-bottom:14px}
+.lf label{display:block;font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.lf input{width:100%;background:rgba(255,255,255,0.05);border:1.5px solid var(--border);border-radius:9px;padding:11px 13px;color:var(--text);font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color 0.2s}
+.lf input:focus{border-color:var(--accent);background:rgba(99,102,241,0.08)}
+.lf input::placeholder{color:var(--muted)}
+.lbtn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:9px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-top:6px;transition:all 0.2s}
+.lbtn:hover{background:var(--accent2);box-shadow:0 6px 20px rgba(99,102,241,0.35)}
+.lbtn:disabled{opacity:0.5;cursor:not-allowed}
+.lerr{background:var(--redL);border:1px solid rgba(239,68,68,0.3);border-radius:7px;padding:9px 13px;font-size:12.5px;color:#fca5a5;margin-top:10px;display:none}
+.lerr.show{display:block}
+.lcfg{text-align:center;margin-top:14px;font-size:12px}
+.lcfg a{color:rgba(99,102,241,0.7);cursor:pointer}
+.lcfg a:hover{color:var(--accent)}
+
+/* APP */
+#app{display:none;height:100vh;overflow:hidden}
+#app.show{display:flex}
+
+/* SIDEBAR */
+#sidebar{width:var(--sbw);background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0;border-right:1px solid var(--border)}
+.sb-brand{padding:22px 18px 16px;border-bottom:1px solid var(--border)}
+.sb-brand .admin-badge{background:var(--redL);border:1px solid rgba(239,68,68,0.25);color:#fca5a5;padding:3px 10px;border-radius:20px;font-size:9.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;display:inline-block;margin-bottom:8px}
+.sb-brand h1{font-family:'Syne',sans-serif;font-size:18px;color:var(--text)}
+.sb-brand p{font-size:10px;color:var(--muted);margin-top:2px}
+.sb-nav{flex:1;padding:10px 0}
+.sbi{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all 0.13s}
+.sbi:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.sbi.active{color:#fff;border-left-color:var(--accent);background:var(--accentL)}
+.sbi .ico{font-size:15px;width:18px;text-align:center}
+.sb-stats{padding:14px;border-top:1px solid var(--border)}
+.admin-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.admin-stat .al{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:2px}
+.admin-stat .av{font-size:20px;font-weight:800;font-family:'Syne',sans-serif}
+.admin-stat.green .av{color:var(--green)}
+.admin-stat.amber .av{color:var(--amber)}
+.sb-logout{width:100%;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:7px;padding:8px;color:#fca5a5;font-size:12px;font-weight:600;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;margin-top:4px;transition:all 0.13s}
+.sb-logout:hover{background:rgba(239,68,68,0.2)}
+
+/* MAIN */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:58px;background:var(--sidebar);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 22px;gap:12px;flex-shrink:0}
+.topbar h2{font-family:'Syne',sans-serif;font-size:17px;flex:1}
+.content{flex:1;overflow-y:auto;padding:22px}
+
+/* PAGES */
+.page{display:none}.page.active{display:block}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+.stat-card .si{font-size:22px;margin-bottom:8px}
+.stat-card .sl{font-size:10.5px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px}
+.stat-card .sv{font-size:24px;font-weight:800;font-family:'Syne',sans-serif}
+.stat-card .ss{font-size:11px;color:var(--text2);margin-top:3px}
+
+/* BUTTONS */
+.btn{padding:7px 15px;border-radius:7px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:700;display:inline-flex;align-items:center;gap:5px;transition:all 0.13s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2);box-shadow:0 4px 12px rgba(99,102,241,0.35)}
+.btn-success{background:var(--green);color:#fff}
+.btn-success:hover{box-shadow:0 4px 12px rgba(16,185,129,0.35)}
+.btn-ghost{background:rgba(255,255,255,0.05);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:rgba(255,255,255,0.09);color:var(--text)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-sm{padding:5px 12px;font-size:12px;border-radius:6px}
+.btn-xs{padding:3px 9px;font-size:11px;border-radius:5px}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.table-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-box{flex:1;background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color 0.15s;min-width:100px}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--muted)}
+select.search-box{flex:0;cursor:pointer}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);font-weight:700;background:rgba(255,255,255,0.02);border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(255,255,255,0.025)}
+td{padding:11px 14px;color:var(--text2);vertical-align:middle}
+td strong{color:var(--text)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.bg-green{background:var(--greenL);color:#6ee7b7}
+.bg-red{background:var(--redL);color:#fca5a5}
+.bg-amber{background:var(--amberL);color:#fcd34d}
+.bg-blue{background:var(--accentL);color:#a5b4fc}
+.bg-gray{background:rgba(255,255,255,0.07);color:var(--text2)}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:700px;max-width:100%;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow);animation:mIn 0.2s ease}
+@keyframes mIn{from{opacity:0;transform:scale(0.95) translateY(10px)}to{opacity:1;transform:scale(1)}}
+.mh{padding:20px 22px 0;display:flex;justify-content:space-between;align-items:center}
+.mh h3{font-family:'Syne',sans-serif;font-size:18px}
+.mc{background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);padding:4px}
+.mc:hover{color:var(--text)}
+.mb{padding:18px 22px 22px}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border)}
+
+/* FORMS */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:12px}
+.fg label{font-size:10.5px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px}
+.fg input,.fg select,.fg textarea{background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-size:13.5px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color 0.15s}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+.fg select option{background:var(--surface)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.frow.c1{grid-template-columns:1fr}
+.frow.c3{grid-template-columns:1fr 1fr 1fr}
+
+/* FEATURE FLAGS */
+.feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.feat-card{background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;transition:border-color 0.15s}
+.feat-card.enabled{border-color:var(--green)}
+.feat-card-left{display:flex;align-items:center;gap:9px}
+.feat-ico{font-size:18px}
+.feat-name{font-size:13px;font-weight:600;color:var(--text)}
+.feat-desc{font-size:11px;color:var(--text2)}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--border);border-radius:22px;transition:.3s}
+.slider:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.3s}
+input:checked+.slider{background:var(--green)}
+input:checked+.slider:before{transform:translateX(18px)}
+
+/* CLIENT CARD (list view) */
+.client-row-actions{display:flex;gap:6px}
+
+/* PLAN PILLS */
+.plan-basic{background:rgba(255,255,255,0.06);color:var(--text2)}
+.plan-pro{background:var(--accentL);color:#a5b4fc}
+.plan-enterprise{background:rgba(245,158,11,0.15);color:#fcd34d}
+
+/* ACTIVITY LOG */
+.log-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.log-dot.green{background:var(--green)}
+.log-dot.blue{background:var(--accent)}
+.log-dot.red{background:var(--red)}
+.log-dot.amber{background:var(--amber)}
+.log-text{font-size:12.5px;color:var(--text2);line-height:1.5}
+.log-time{font-size:11px;color:var(--muted)}
+
+/* SUPABASE CONFIG */
+.sb-setup-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+
+/* TOAST */
+#toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:#1e293b;border:1px solid var(--border);color:var(--text);padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:var(--shadow);display:none;align-items:center;gap:8px;max-width:320px;animation:tIn 0.2s ease}
+@keyframes tIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:14px 0}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 20px;color:var(--muted)}
+.empty .ei{font-size:38px;margin-bottom:10px;opacity:0.4}
+.empty p{font-size:13px}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#2e4060;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="show">
+  <div class="lcard">
+    <div class="lbrand">
+      <div class="badge">Super Admin</div>
+      <h1>BizSuite</h1>
+      <p>Owner / Administrator Access Only</p>
+    </div>
+    <div class="lf"><label>Email</label><input type="email" id="l-email" placeholder="admin@yourdomain.com" autocomplete="email" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="lf"><label>Password</label><input type="password" id="l-pass" placeholder="Your admin password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="lbtn" id="l-btn" onclick="doLogin()">Enter Admin Panel →</button>
+    <div class="lerr" id="l-err"></div>
+    <div class="lcfg"><a onclick="toggleSbSetup()">⚙️ Configure Supabase</a></div>
+    <div id="sb-setup-inline" style="display:none;margin-top:14px">
+      <div class="sb-setup-card">
+        <div class="fg" style="margin-bottom:10px"><label>Project URL</label><input id="sb-url" placeholder="https://xxxxx.supabase.co"></div>
+        <div class="fg" style="margin-bottom:12px"><label>Anon / Public Key</label><input id="sb-key" placeholder="eyJhbGciOiJIUzI1..."></div>
+        <button class="btn btn-primary" style="width:100%" onclick="saveSbCfg()">💾 Save Connection</button>
+        <div id="sb-cfg-err" style="display:none;color:#fca5a5;font-size:12px;margin-top:8px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div id="sidebar">
+    <div class="sb-brand">
+      <div class="admin-badge">Super Admin</div>
+      <h1>BizSuite</h1>
+      <p>Management Console</p>
+    </div>
+    <nav class="sb-nav">
+      <div class="sbi active" onclick="goto('overview',this)"><span class="ico">📊</span> Overview</div>
+      <div class="sbi" onclick="goto('clients',this)"><span class="ico">🏢</span> Clients</div>
+      <div class="sbi" onclick="goto('add-client',this)"><span class="ico">➕</span> Add Client</div>
+      <div class="sbi" onclick="goto('activity',this)"><span class="ico">📋</span> Activity Log</div>
+      <div class="sbi" onclick="goto('settings',this)"><span class="ico">⚙️</span> Settings</div>
+    </nav>
+    <div class="sb-stats">
+      <div class="admin-stat green"><div class="al">Active Clients</div><div class="av" id="sb-active-count">—</div></div>
+      <div class="admin-stat amber"><div class="al">Total Clients</div><div class="av" id="sb-total-count">—</div></div>
+      <button class="sb-logout" onclick="doLogout()">⎋ Sign Out</button>
+    </div>
+  </div>
+
+  <div id="main">
+    <div class="topbar">
+      <h2 id="page-title">Overview</h2>
+      <div id="topbar-acts"></div>
+    </div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div id="page-overview" class="page active">
+        <div class="stats-row" id="ov-stats"></div>
+        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px">
+          <div class="table-wrap">
+            <div class="table-head"><span style="font-size:13.5px;font-weight:700;color:var(--text)">🏢 All Clients</span><button class="btn btn-primary btn-sm" onclick="goto('add-client',null)">＋ Add Client</button></div>
+            <table><thead><tr><th>Company</th><th>Plan</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead><tbody id="ov-client-list"></tbody></table>
+          </div>
+          <div class="table-wrap">
+            <div class="table-head"><span style="font-size:13.5px;font-weight:700;color:var(--text)">📋 Recent Activity</span></div>
+            <div id="ov-activity" style="padding:14px;max-height:350px;overflow-y:auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTS -->
+      <div id="page-clients" class="page">
+        <div class="table-wrap">
+          <div class="table-head">
+            <input class="search-box" placeholder="🔍 Search clients…" id="cli-search" oninput="renderClients()">
+            <select class="search-box" style="flex:0;width:130px" id="cli-plan" onchange="renderClients()">
+              <option value="">All Plans</option><option>basic</option><option>pro</option><option>enterprise</option>
+            </select>
+            <select class="search-box" style="flex:0;width:130px" id="cli-status" onchange="renderClients()">
+              <option value="">All Status</option><option>active</option><option>trial</option><option>suspended</option>
+            </select>
+            <button class="btn btn-primary btn-sm" onclick="goto('add-client',null)">＋ Add Client</button>
+          </div>
+          <table>
+            <thead><tr><th>Company</th><th>Email</th><th>Plan</th><th>Status</th><th>Joined</th><th style="width:200px">Actions</th></tr></thead>
+            <tbody id="cli-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ADD CLIENT -->
+      <div id="page-add-client" class="page">
+        <div style="max-width:620px">
+          <div class="table-wrap" style="padding:22px">
+            <h3 style="font-family:'Syne',sans-serif;font-size:17px;margin-bottom:18px">🏢 Add New Client</h3>
+            <div class="frow"><div class="fg"><label>Company Name *</label><input id="nc-name" placeholder="Ahmed Traders"></div><div class="fg"><label>Plan</label><select id="nc-plan"><option value="basic">Basic</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></div></div>
+            <div class="frow"><div class="fg"><label>Login Email *</label><input type="email" id="nc-email" placeholder="client@company.com"></div><div class="fg"><label>Temporary Password *</label><input type="password" id="nc-pass" placeholder="Set initial password" autocomplete="new-password"></div></div>
+            <div class="frow"><div class="fg"><label>Phone</label><input id="nc-phone" placeholder="+92 300 1234567"></div><div class="fg"><label>Status</label><select id="nc-status"><option value="active">Active</option><option value="trial">Trial</option><option value="suspended">Suspended</option></select></div></div>
+            <div class="fg c1"><label>Notes (internal only)</label><textarea id="nc-notes" rows="2" placeholder="Any internal notes about this client…" style="resize:none"></textarea></div>
+            <div class="divider"></div>
+            <h4 style="font-size:12.5px;font-weight:700;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px">🔧 Enable Modules</h4>
+            <div style="margin-bottom:6px;font-size:12px;color:var(--text2)">Core modules are always on. Toggle premium modules:</div>
+            <div class="feature-grid" id="nc-features">
+              <!-- Core (locked on) -->
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">💰</span><div><div class="feat-name">Sales & Invoices</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">🛒</span><div><div class="feat-name">Purchases & POs</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">📋</span><div><div class="feat-name">Expenses</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">📦</span><div><div class="feat-name">Products & Stock</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">👥</span><div><div class="feat-name">Clients & Vendors</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <div class="feat-card enabled"><div class="feat-card-left"><span class="feat-ico">📈</span><div><div class="feat-name">Reports</div><div class="feat-desc">Core — always on</div></div></div><span style="color:var(--green);font-size:18px">✓</span></div>
+              <!-- Premium toggles -->
+              <div class="feat-card" id="fc-payroll"><div class="feat-card-left"><span class="feat-ico">👨‍💼</span><div><div class="feat-name">Payroll & Staff</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-payroll"><span class="slider"></span></label></div>
+              <div class="feat-card" id="fc-delivery"><div class="feat-card-left"><span class="feat-ico">🚚</span><div><div class="feat-name">Delivery Tracking</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-delivery"><span class="slider"></span></label></div>
+              <div class="feat-card" id="fc-multibranch"><div class="feat-card-left"><span class="feat-ico">🏪</span><div><div class="feat-name">Multi-Branch</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-multibranch"><span class="slider"></span></label></div>
+              <div class="feat-card" id="fc-barcode"><div class="feat-card-left"><span class="feat-ico">📷</span><div><div class="feat-name">Barcode Scanner</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-barcode"><span class="slider"></span></label></div>
+              <div class="feat-card" id="fc-whatsapp"><div class="feat-card-left"><span class="feat-ico">💬</span><div><div class="feat-name">WhatsApp Sharing</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-whatsapp"><span class="slider"></span></label></div>
+              <div class="feat-card" id="fc-pos"><div class="feat-card-left"><span class="feat-ico">🖥️</span><div><div class="feat-name">POS / Cash Register</div><div class="feat-desc">Premium module</div></div></div><label class="toggle"><input type="checkbox" id="ft-pos"><span class="slider"></span></label></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:6px">
+              <button class="btn btn-ghost" onclick="clearAddForm()">Clear</button>
+              <button class="btn btn-primary" onclick="addClient()" style="flex:1">✅ Create Client Account</button>
+            </div>
+            <div id="add-status" style="display:none;margin-top:12px;padding:11px 14px;border-radius:8px;font-size:13px"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY LOG -->
+      <div id="page-activity" class="page">
+        <div class="table-wrap">
+          <div class="table-head"><span style="font-size:13.5px;font-weight:700;color:var(--text)">📋 Activity Log</span><button class="btn btn-ghost btn-sm" onclick="loadActivity()">↻ Refresh</button></div>
+          <table>
+            <thead><tr><th>Action</th><th>Target</th><th>Details</th><th>Time</th></tr></thead>
+            <tbody id="act-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="page-settings" class="page">
+        <div style="max-width:560px">
+          <div class="table-wrap" style="padding:22px;margin-bottom:16px">
+            <h3 style="font-family:'Syne',sans-serif;font-size:17px;margin-bottom:4px">⚙️ Supabase Connection</h3>
+            <p style="font-size:12.5px;color:var(--text2);margin-bottom:16px">Update your connection credentials here.</p>
+            <div class="fg" style="margin-bottom:10px"><label>Project URL</label><input id="set-sb-url" placeholder="https://xxxxx.supabase.co"></div>
+            <div class="fg" style="margin-bottom:14px"><label>Anon / Public Key</label><input id="set-sb-key" placeholder="eyJhbGci..."></div>
+            <button class="btn btn-primary" onclick="saveSbCfgFromSettings()">💾 Save Connection</button>
+          </div>
+          <div class="table-wrap" style="padding:22px">
+            <h3 style="font-family:'Syne',sans-serif;font-size:17px;margin-bottom:4px">👤 Admin Account</h3>
+            <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px">Logged in as: <strong id="admin-email-display">—</strong></p>
+            <button class="btn btn-danger btn-sm" onclick="doLogout()">⎋ Sign Out</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- CLIENT MANAGE MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal-box">
+    <div class="mh"><h3 id="modal-title">—</h3><button class="mc" onclick="closeModal()">✕</button></div>
+    <div class="mb" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  SUPABASE
+// ═══════════════════════════════════════════════════
+const SB_CFG_KEY='biz_admin_sb_cfg';
+let _sb=null;
+let _adminUser=null;
+let _clients=[];
+let _actLog=[];
+
+function getSbCfg(){try{return JSON.parse(localStorage.getItem(SB_CFG_KEY))||null}catch(e){return null}}
+function setSbCfg(url,key){localStorage.setItem(SB_CFG_KEY,JSON.stringify({url,key}))}
+
+function buildClient(){
+  const c=getSbCfg();
+  if(!c||!c.url||!c.key)return false;
+  try{_sb=supabase.createClient(c.url,c.key);return true}catch(e){return false}
+}
+
+// ═══════════════════════════════════════════════════
+//  HELPERS
+// ═══════════════════════════════════════════════════
+let toastTimer;
+function toast(msg,type='ok'){
+  const el=document.getElementById('toast');
+  el.textContent=(type==='ok'?'✅ ':type==='err'?'❌ ':'⚠️ ')+msg;
+  el.style.display='flex';
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.style.display='none',3500);
+}
+function openModal(title,html){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').innerHTML=html;
+  document.getElementById('overlay').classList.add('open');
+}
+function closeModal(){document.getElementById('overlay').classList.remove('open')}
+
+function fd(d){if(!d)return'—';const dt=typeof d==='string'?new Date(d):d;return dt.toLocaleDateString('en-PK',{year:'numeric',month:'short',day:'numeric'})}
+function fdt(d){if(!d)return'—';const dt=new Date(d);return dt.toLocaleDateString('en-PK',{month:'short',day:'numeric'})+' '+dt.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}
+
+function planBadge(plan){
+  const m={basic:'bg-gray plan-basic',pro:'bg-blue plan-pro',enterprise:'bg-amber plan-enterprise'};
+  return`<span class="badge ${m[plan]||'bg-gray'}">${plan||'basic'}</span>`;
+}
+function statusBadge(s){
+  const m={active:'bg-green',trial:'bg-amber',suspended:'bg-red'};
+  return`<span class="badge ${m[s]||'bg-gray'}">${s||'active'}</span>`;
+}
+
+async function logAction(action,target,details){
+  if(!_sb)return;
+  try{await _sb.from('audit_log').insert({admin_id:_adminUser?.id,action,target,details})}catch(e){}
+}
+
+// ═══════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════
+function showLogin(){document.getElementById('login-screen').classList.add('show');document.getElementById('app').classList.remove('show')}
+function showApp(){document.getElementById('login-screen').classList.remove('show');document.getElementById('app').classList.add('show')}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('l-err');
+  const btn=document.getElementById('l-btn');
+  errEl.classList.remove('show');
+  if(!email||!pass){errEl.textContent='Email and password required.';errEl.classList.add('show');return}
+  if(!_sb){errEl.textContent='Supabase not configured. Click "Configure Supabase" below.';errEl.classList.add('show');return}
+  btn.disabled=true;btn.textContent='Signing in…';
+  try{
+    const{data,error}=await _sb.auth.signInWithPassword({email,password:pass});
+    if(error)throw error;
+    // Verify super admin
+    const{data:admin,error:ae}=await _sb.from('super_admins').select('*').eq('id',data.user.id).single();
+    if(ae||!admin){await _sb.auth.signOut();errEl.textContent='Access denied. This account is not a super admin.';errEl.classList.add('show');btn.disabled=false;btn.textContent='Enter Admin Panel →';return}
+    _adminUser=data.user;
+    await onAdminLogin();
+  }catch(e){
+    errEl.textContent=e.message||'Login failed.';
+    errEl.classList.add('show');
+  }
+  btn.disabled=false;btn.textContent='Enter Admin Panel →';
+}
+
+async function onAdminLogin(){
+  showApp();
+  document.getElementById('admin-email-display').textContent=_adminUser.email;
+  await loadClients();
+  renderOverview();
+  loadActivity();
+  prefillSbSettings();
+}
+
+async function doLogout(){
+  if(!confirm('Sign out of admin panel?'))return;
+  if(_sb)await _sb.auth.signOut();
+  _adminUser=null;_clients=[];
+  showLogin();
+}
+
+// ═══════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════
+const PAGE_TITLES={overview:'📊 Overview',clients:'🏢 Clients',['add-client']:'➕ Add New Client',activity:'📋 Activity Log',settings:'⚙️ Settings'};
+const TOPBAR_ACTS={
+  clients:'<button class="btn btn-primary btn-sm" onclick="goto(\'add-client\',null)">＋ Add Client</button>',
+  activity:'<button class="btn btn-ghost btn-sm" onclick="loadActivity()">↻ Refresh</button>',
+};
+
+function goto(page,navEl){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sbi').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);if(pg)pg.classList.add('active');
+  if(navEl)navEl.classList.add('active');
+  else{const ni=document.querySelector(`.sbi[onclick*="'${page}'"]`);if(ni)ni.classList.add('active')}
+  document.getElementById('page-title').textContent=PAGE_TITLES[page]||page;
+  document.getElementById('topbar-acts').innerHTML=TOPBAR_ACTS[page]||'';
+  if(page==='clients')renderClients();
+  if(page==='activity')loadActivity();
+  if(page==='overview')renderOverview();
+  if(page==='settings')prefillSbSettings();
+}
+
+// ═══════════════════════════════════════════════════
+//  LOAD CLIENTS
+// ═══════════════════════════════════════════════════
+async function loadClients(){
+  if(!_sb)return;
+  try{
+    const{data,error}=await _sb.from('tenants').select('*, tenant_features(*)').order('created_at',{ascending:false});
+    if(error)throw error;
+    _clients=data||[];
+    updateSidebarCounts();
+  }catch(e){console.error('Load clients failed:',e)}
+}
+
+function updateSidebarCounts(){
+  document.getElementById('sb-active-count').textContent=_clients.filter(c=>c.status==='active').length;
+  document.getElementById('sb-total-count').textContent=_clients.length;
+}
+
+// ═══════════════════════════════════════════════════
+//  OVERVIEW
+// ═══════════════════════════════════════════════════
+function renderOverview(){
+  const active=_clients.filter(c=>c.status==='active').length;
+  const trial=_clients.filter(c=>c.status==='trial').length;
+  const suspended=_clients.filter(c=>c.status==='suspended').length;
+  const pro=_clients.filter(c=>c.plan==='pro'||c.plan==='enterprise').length;
+  document.getElementById('ov-stats').innerHTML=`
+    <div class="stat-card"><div class="si">🏢</div><div class="sl">Total Clients</div><div class="sv">${_clients.length}</div><div class="ss">All time</div></div>
+    <div class="stat-card"><div class="si">✅</div><div class="sl">Active</div><div class="sv" style="color:var(--green)">${active}</div><div class="ss">Paying clients</div></div>
+    <div class="stat-card"><div class="si">⏳</div><div class="sl">On Trial</div><div class="sv" style="color:var(--amber)">${trial}</div><div class="ss">Convert to paid</div></div>
+    <div class="stat-card"><div class="si">⭐</div><div class="sl">Pro / Enterprise</div><div class="sv" style="color:var(--accent)">${pro}</div><div class="ss">Premium plans</div></div>`;
+  // Client list
+  const tbody=document.getElementById('ov-client-list');
+  if(!_clients.length){tbody.innerHTML=`<tr><td colspan="5"><div class="empty"><div class="ei">🏢</div><p>No clients yet. Add your first client!</p></div></td></tr>`;return}
+  tbody.innerHTML=_clients.slice(0,8).map(c=>`
+    <tr>
+      <td><strong>${c.name}</strong><div style="font-size:11px;color:var(--muted)">${c.email}</div></td>
+      <td>${planBadge(c.plan)}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td style="font-size:12px;color:var(--muted)">${fd(c.created_at)}</td>
+      <td><button class="btn btn-ghost btn-xs" onclick="openManageModal('${c.id}')">Manage</button></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  CLIENTS PAGE
+// ═══════════════════════════════════════════════════
+function renderClients(){
+  const search=(document.getElementById('cli-search')?.value||'').toLowerCase();
+  const plan=document.getElementById('cli-plan')?.value||'';
+  const status=document.getElementById('cli-status')?.value||'';
+  let rows=_clients.filter(c=>{
+    if(plan&&c.plan!==plan)return false;
+    if(status&&c.status!==status)return false;
+    if(search&&!c.name.toLowerCase().includes(search)&&!c.email.toLowerCase().includes(search))return false;
+    return true;
+  });
+  const tb=document.getElementById('cli-tbody');if(!tb)return;
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="6"><div class="empty"><div class="ei">🏢</div><p>No clients match your filters</p></div></td></tr>`;return}
+  tb.innerHTML=rows.map(c=>`
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td style="font-size:12.5px">${c.email}</td>
+      <td>${planBadge(c.plan)}</td>
+      <td>${statusBadge(c.status)}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${fd(c.created_at)}</td>
+      <td>
+        <div class="client-row-actions">
+          <button class="btn btn-ghost btn-xs" onclick="openManageModal('${c.id}')">⚙️ Manage</button>
+          <button class="btn btn-danger btn-xs" onclick="deleteClient('${c.id}','${c.name}')">Del</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  MANAGE CLIENT MODAL
+// ═══════════════════════════════════════════════════
+function openManageModal(tenantId){
+  const c=_clients.find(x=>x.id===tenantId);
+  if(!c)return;
+  const f=c.tenant_features?.[0]||{};
+  const PREMIUMS=[
+    {key:'mod_payroll',    ico:'👨‍💼', name:'Payroll & Staff'},
+    {key:'mod_delivery',   ico:'🚚', name:'Delivery Tracking'},
+    {key:'mod_multibranch',ico:'🏪', name:'Multi-Branch'},
+    {key:'mod_barcode',    ico:'📷', name:'Barcode Scanner'},
+    {key:'mod_whatsapp',   ico:'💬', name:'WhatsApp Sharing'},
+    {key:'mod_pos',        ico:'🖥️', name:'POS Register'},
+  ];
+  openModal(`⚙️ Manage: ${c.name}`,`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div style="font-size:10.5px;text-transform:uppercase;letter-spacing:1px;color:var(--text2);font-weight:700;margin-bottom:8px">Client Info</div>
+        <div style="font-weight:700;font-size:14px">${c.name}</div>
+        <div style="font-size:12px;color:var(--text2)">${c.email}</div>
+        <div style="font-size:12px;color:var(--text2)">${c.phone||'—'}</div>
+        <div style="margin-top:8px">${statusBadge(c.status)} ${planBadge(c.plan)}</div>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px">
+        <div class="fg" style="margin-bottom:8px"><label>Plan</label>
+          <select id="mg-plan" style="background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none">
+            ${['basic','pro','enterprise'].map(p=>`<option${c.plan===p?' selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>
+        <div class="fg"><label>Status</label>
+          <select id="mg-status" style="background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none">
+            ${['active','trial','suspended'].map(s=>`<option${c.status===s?' selected':''}>${s}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">🔧 Premium Modules</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      ${PREMIUMS.map(pm=>`
+        <div class="feat-card${f[pm.key]?' enabled':''}">
+          <div class="feat-card-left">
+            <span class="feat-ico">${pm.ico}</span>
+            <div><div class="feat-name">${pm.name}</div></div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="mg-${pm.key}"${f[pm.key]?' checked':''}>
+            <span class="slider"></span>
+          </label>
+        </div>`).join('')}
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">📝 Internal Notes</div>
+    <textarea id="mg-notes" rows="2" style="width:100%;background:var(--surface2);border:1.5px solid var(--border);border-radius:7px;padding:9px 11px;color:var(--text);font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;resize:none">${c.notes||''}</textarea>
+
+    <div class="mf">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger btn-sm" onclick="suspendClient('${c.id}')">⛔ Suspend</button>
+      <button class="btn btn-primary" onclick="saveClientChanges('${c.id}')">💾 Save Changes</button>
+    </div>
+  `);
+}
+
+async function saveClientChanges(tenantId){
+  const plan=document.getElementById('mg-plan').value;
+  const status=document.getElementById('mg-status').value;
+  const notes=document.getElementById('mg-notes').value;
+  const features={
+    mod_payroll:   document.getElementById('mg-mod_payroll')?.checked||false,
+    mod_delivery:  document.getElementById('mg-mod_delivery')?.checked||false,
+    mod_multibranch:document.getElementById('mg-mod_multibranch')?.checked||false,
+    mod_barcode:   document.getElementById('mg-mod_barcode')?.checked||false,
+    mod_whatsapp:  document.getElementById('mg-mod_whatsapp')?.checked||false,
+    mod_pos:       document.getElementById('mg-mod_pos')?.checked||false,
+  };
+  try{
+    const{error:te}=await _sb.from('tenants').update({plan,status,notes,updated_at:new Date().toISOString()}).eq('id',tenantId);
+    if(te)throw te;
+    const{error:fe}=await _sb.from('tenant_features').update({...features,updated_at:new Date().toISOString()}).eq('tenant_id',tenantId);
+    if(fe)throw fe;
+    await logAction('update_client',tenantId,{plan,status,features});
+    closeModal();await loadClients();renderOverview();renderClients();
+    toast('Client updated successfully');
+  }catch(e){toast('Update failed: '+e.message,'err')}
+}
+
+async function suspendClient(tenantId){
+  if(!confirm('Suspend this client? They will not be able to log in.'))return;
+  try{
+    await _sb.from('tenants').update({status:'suspended'}).eq('id',tenantId);
+    await logAction('suspend_client',tenantId,{});
+    closeModal();await loadClients();renderOverview();renderClients();
+    toast('Client suspended','warn');
+  }catch(e){toast('Failed: '+e.message,'err')}
+}
+
+async function deleteClient(tenantId,name){
+  if(!confirm(`Delete client "${name}"? This deletes ALL their data permanently.`))return;
+  if(!confirm('Are you absolutely sure? This CANNOT be undone.'))return;
+  try{
+    await _sb.from('tenants').delete().eq('id',tenantId);
+    await logAction('delete_client',tenantId,{name});
+    await loadClients();renderOverview();renderClients();
+    toast('Client deleted','warn');
+  }catch(e){toast('Delete failed: '+e.message,'err')}
+}
+
+// ═══════════════════════════════════════════════════
+//  ADD CLIENT
+// ═══════════════════════════════════════════════════
+function clearAddForm(){
+  ['nc-name','nc-email','nc-pass','nc-phone','nc-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  ['payroll','delivery','multibranch','barcode','whatsapp','pos'].forEach(k=>{const el=document.getElementById('ft-'+k);if(el)el.checked=false});
+  document.getElementById('add-status').style.display='none';
+}
+
+async function addClient(){
+  const name=document.getElementById('nc-name').value.trim();
+  const email=document.getElementById('nc-email').value.trim();
+  const pass=document.getElementById('nc-pass').value;
+  const phone=document.getElementById('nc-phone').value.trim();
+  const plan=document.getElementById('nc-plan').value;
+  const status=document.getElementById('nc-status').value;
+  const notes=document.getElementById('nc-notes').value.trim();
+  const statusEl=document.getElementById('add-status');
+
+  statusEl.style.display='none';
+  if(!name||!email||!pass){showAddStatus('error','Name, email and password are required.');return}
+  if(pass.length<6){showAddStatus('error','Password must be at least 6 characters.');return}
+
+  showAddStatus('loading','Creating client account…');
+
+  try{
+    // 1. Create auth user
+    const{data:authData,error:authErr}=await _sb.auth.admin.createUser({
+      email,password:pass,email_confirm:true,
+      user_metadata:{company:name,role:'client'}
+    });
+    // admin.createUser may not be available on anon key — fallback to signUp
+    if(authErr&&authErr.message.includes('not allowed')){
+      showAddStatus('error','Note: Use the Supabase Dashboard to create the auth user manually, then create the tenant record. Or enable "service_role" key for admin operations.');
+      return;
+    }
+    if(authErr)throw authErr;
+
+    // 2. Create tenant record
+    const{data:tenant,error:tenantErr}=await _sb.from('tenants').insert({
+      name,email,phone,plan,status,notes
+    }).select().single();
+    if(tenantErr)throw tenantErr;
+
+    // 3. Feature flags created by DB trigger automatically
+    // 4. Update premium features if any are toggled
+    const premFeatures={
+      mod_payroll:   document.getElementById('ft-payroll')?.checked||false,
+      mod_delivery:  document.getElementById('ft-delivery')?.checked||false,
+      mod_multibranch:document.getElementById('ft-multibranch')?.checked||false,
+      mod_barcode:   document.getElementById('ft-barcode')?.checked||false,
+      mod_whatsapp:  document.getElementById('ft-whatsapp')?.checked||false,
+      mod_pos:       document.getElementById('ft-pos')?.checked||false,
+    };
+    await _sb.from('tenant_features').update(premFeatures).eq('tenant_id',tenant.id);
+    await logAction('add_client',tenant.id,{name,email,plan,status});
+    await loadClients();renderOverview();
+    clearAddForm();
+    showAddStatus('success',`✅ Client "${name}" created! They can now log into the app at: app.html`);
+  }catch(e){
+    // If admin API not available, create tenant record only
+    if(e.message&&e.message.includes('admin')){
+      try{
+        const{data:tenant,error:tenantErr}=await _sb.from('tenants').insert({name,email,phone,plan,status,notes}).select().single();
+        if(tenantErr)throw tenantErr;
+        const pf={mod_payroll:document.getElementById('ft-payroll')?.checked||false,mod_delivery:document.getElementById('ft-delivery')?.checked||false,mod_multibranch:document.getElementById('ft-multibranch')?.checked||false,mod_barcode:document.getElementById('ft-barcode')?.checked||false,mod_whatsapp:document.getElementById('ft-whatsapp')?.checked||false,mod_pos:document.getElementById('ft-pos')?.checked||false};
+        await _sb.from('tenant_features').update(pf).eq('tenant_id',tenant.id);
+        await logAction('add_client',tenant.id,{name,email,plan});
+        await loadClients();renderOverview();clearAddForm();
+        showAddStatus('success',`✅ Client "${name}" record created! Go to Supabase → Authentication → Invite User to send login email to ${email}`);
+      }catch(e2){showAddStatus('error','Error: '+e2.message)}
+    }else{showAddStatus('error','Error: '+e.message)}
+  }
+}
+
+function showAddStatus(type,msg){
+  const el=document.getElementById('add-status');
+  el.style.display='block';
+  const styles={
+    success:{bg:'var(--greenL)',border:'rgba(16,185,129,0.3)',color:'#6ee7b7'},
+    error:{bg:'var(--redL)',border:'rgba(239,68,68,0.3)',color:'#fca5a5'},
+    loading:{bg:'var(--accentL)',border:'rgba(99,102,241,0.3)',color:'#a5b4fc'},
+  };
+  const s=styles[type]||styles.loading;
+  el.style.background=s.bg;el.style.border=`1px solid ${s.border}`;el.style.color=s.color;el.style.borderRadius='8px';el.style.padding='11px 14px';el.style.fontSize='13px';el.style.lineHeight='1.6';
+  el.innerHTML=msg;
+}
+
+// ═══════════════════════════════════════════════════
+//  ACTIVITY LOG
+// ═══════════════════════════════════════════════════
+async function loadActivity(){
+  if(!_sb)return;
+  try{
+    const{data,error}=await _sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(50);
+    if(error)throw error;
+    _actLog=data||[];
+    renderActivity();
+    renderOvActivity();
+  }catch(e){console.error('Activity load failed:',e)}
+}
+
+function renderActivity(){
+  const tb=document.getElementById('act-tbody');if(!tb)return;
+  if(!_actLog.length){tb.innerHTML=`<tr><td colspan="4"><div class="empty"><div class="ei">📋</div><p>No activity yet</p></div></td></tr>`;return}
+  const actIco={add_client:'🟢',update_client:'🔵',delete_client:'🔴',suspend_client:'🟠'};
+  tb.innerHTML=_actLog.map(a=>`
+    <tr>
+      <td><strong>${actIco[a.action]||'⚪'} ${(a.action||'').replace(/_/g,' ')}</strong></td>
+      <td style="font-size:12px;color:var(--text2)">${a.target||'—'}</td>
+      <td style="font-size:11.5px;color:var(--muted)">${a.details?JSON.stringify(a.details).slice(0,60)+'…':'—'}</td>
+      <td style="font-size:11.5px;color:var(--muted);white-space:nowrap">${fdt(a.created_at)}</td>
+    </tr>`).join('');
+}
+
+function renderOvActivity(){
+  const el=document.getElementById('ov-activity');if(!el)return;
+  if(!_actLog.length){el.innerHTML='<div class="empty" style="padding:20px"><div class="ei">📋</div><p>No activity yet</p></div>';return}
+  const cols={add_client:'green',update_client:'blue',delete_client:'red',suspend_client:'amber'};
+  el.innerHTML=_actLog.slice(0,15).map(a=>`
+    <div class="log-item">
+      <div class="log-dot ${cols[a.action]||'blue'}"></div>
+      <div style="flex:1">
+        <div class="log-text"><strong>${(a.action||'').replace(/_/g,' ')}</strong></div>
+        <div class="log-time">${fdt(a.created_at)}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+//  SUPABASE CONFIG
+// ═══════════════════════════════════════════════════
+function toggleSbSetup(){
+  const el=document.getElementById('sb-setup-inline');
+  el.style.display=el.style.display==='none'?'block':'none';
+  if(el.style.display==='block'){
+    const cfg=getSbCfg();
+    if(cfg){document.getElementById('sb-url').value=cfg.url||'';document.getElementById('sb-key').value=cfg.key||''}
+  }
+}
+function saveSbCfg(){
+  const url=document.getElementById('sb-url').value.trim();
+  const key=document.getElementById('sb-key').value.trim();
+  const err=document.getElementById('sb-cfg-err');
+  err.style.display='none';
+  if(!url||!key){err.textContent='Both fields required.';err.style.display='block';return}
+  setSbCfg(url,key);
+  if(buildClient()){document.getElementById('sb-setup-inline').style.display='none';toast('Supabase connected!')}
+  else{err.textContent='Connection failed.';err.style.display='block'}
+}
+function prefillSbSettings(){
+  const cfg=getSbCfg();
+  if(cfg){document.getElementById('set-sb-url').value=cfg.url||'';document.getElementById('set-sb-key').value=cfg.key||''}
+}
+function saveSbCfgFromSettings(){
+  const url=document.getElementById('set-sb-url').value.trim();
+  const key=document.getElementById('set-sb-key').value.trim();
+  if(!url||!key){toast('Both fields required','err');return}
+  setSbCfg(url,key);
+  if(buildClient())toast('Supabase connection updated')
+  else toast('Connection failed','err')
+}
+
+// ═══════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════
+window.addEventListener('load',async()=>{
+  buildClient();
+  if(_sb){
+    const{data:{session}}=await _sb.auth.getSession();
+    if(session?.user){
+      const{data:admin}=await _sb.from('super_admins').select('*').eq('id',session.user.id).single();
+      if(admin){_adminUser=session.user;await onAdminLogin();return}
+    }
+  }
+  showLogin();
+});
+</script>
+</body>
+</html>
