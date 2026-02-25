@@ -657,7 +657,7 @@ async function pushToCloud(){
   if(!_sb||!_tenant)return;
   setSyncUI('amber','Saving…');
   try{const{error}=await _sb.from('tenant_data').upsert({tenant_id:_tenant.id,data:db,updated_at:new Date().toISOString()},{onConflict:'tenant_id'});if(error)throw error;setSyncUI('green','Synced · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}))}
-  catch(e){setSyncUI('red','Offline')}
+  catch(e){setSyncUI('amber',navigator.onLine?'Sync error':'Offline')}
 }
 async function pullFromCloud(){
   if(!_sb||!_tenant)return null;
@@ -667,61 +667,51 @@ function schedulePush(){setSyncUI('amber','Pending…');clearTimeout(_syncTimer)
 
 // ══ OFFLINE DETECTION & AUTO-SYNC ══
 let _wasOffline = false;
+let _offlineCheckTimer = null;
 
-function updateOnlineStatus(){
-  const online = navigator.onLine;
-  const pill = document.getElementById('sync-pill');
-  if(!online){
+function checkRealConnectivity(){
+  // Use navigator.onLine as first check — if false, definitely offline
+  if(!navigator.onLine){
+    _setOfflineUI();
+    return;
+  }
+  // navigator.onLine can lie (connected to router but no internet)
+  // Do a lightweight ping to confirm real internet
+  const url = 'https://www.google.com/favicon.ico?_=' + Date.now();
+  fetch(url, {method:'HEAD', mode:'no-cors', cache:'no-store'})
+    .then(()=>{
+      // Real internet confirmed
+      if(_wasOffline){
+        _wasOffline = false;
+        setSyncUI('amber','Reconnected…');
+        setTimeout(()=>{ pushToCloud(); }, 800);
+        toast('Back online — syncing data…');
+      }
+    })
+    .catch(()=>{
+      // Fetch failed — genuinely offline
+      _setOfflineUI();
+    });
+}
+
+function _setOfflineUI(){
+  if(!_wasOffline){
     _wasOffline = true;
     setSyncUI('red','Offline');
-    if(pill) pill.title = 'No internet — data saved locally, will sync when reconnected';
-  } else {
-    if(_wasOffline){
-      _wasOffline = false;
-      setSyncUI('amber','Reconnected…');
-      setTimeout(()=>{ pushToCloud(); }, 1000);
-      toast('Back online — syncing data…');
-    }
+    // Show a subtle offline pill — no intrusive banner
+    const pill = document.getElementById('sync-pill');
+    if(pill) pill.title = 'No internet connection. Data is saved locally and will sync when you reconnect.';
   }
+}
+
+function updateOnlineStatus(){
+  // Small delay to avoid false triggers on page load
+  clearTimeout(_offlineCheckTimer);
+  _offlineCheckTimer = setTimeout(checkRealConnectivity, 1500);
 }
 
 window.addEventListener('online',  updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
-
-// Service Worker registration for offline caching
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
-    // Inline SW via blob — caches the app for offline use
-    const swCode = `
-const CACHE='bizsuite-v1';
-const ASSETS=['./app.html','./manifest.json'];
-self.addEventListener('install', e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).catch(()=>{}));
-  self.skipWaiting();
-});
-self.addEventListener('activate', e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e=>{
-  if(e.request.method!=='GET')return;
-  e.respondWith(
-    fetch(e.request).then(r=>{
-      if(r&&r.status===200){
-        const rc=r.clone();
-        caches.open(CACHE).then(c=>c.put(e.request,rc));
-      }
-      return r;
-    }).catch(()=>caches.match(e.request))
-  );
-});`;
-    const blob = new Blob([swCode], {type:'application/javascript'});
-    const swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).then(()=>{
-      console.log('BizSuite: offline mode active');
-    }).catch(()=>{});
-  });
-}
 function setSyncUI(status,msg){
   const d=document.getElementById('sync-dot'),t=document.getElementById('sync-txt');
   if(d)d.className='sync-dot '+status;
@@ -775,7 +765,7 @@ async function onLoginSuccess(user){
   _features=features||{f_sales:true,f_purchases:true,f_expenses:true,f_products:true,f_clients_vendors:true,f_reports:true};
   const cloud=await pullFromCloud();
   if(cloud&&(cloud._updatedAt||0)>(db._updatedAt||0)){db=cloud;localStorage.setItem(DB_KEY,JSON.stringify(db))}
-  showApp();buildSidebar();buildMobileMore();renderSidebarInfo();loadAppearance();renderDashboard();setSyncUI('green','Synced');updateOnlineStatus();
+  showApp();buildSidebar();buildMobileMore();renderSidebarInfo();loadAppearance();renderDashboard();setSyncUI('green','Synced');
 }
 async function doLogout(){if(!confirm('Sign out?'))return;if(_sb)await _sb.auth.signOut();_tenant=null;_features=null;showLogin()}
 
